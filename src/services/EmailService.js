@@ -1,0 +1,159 @@
+export class EmailService {
+  constructor() {
+    // Email will be sent to the consultant's email address
+    this.consultantEmail = 'reuelconsulting@gmail.com'
+    this.apiEndpoint = '/api/submit-assessment' // This would be your actual API endpoint
+  }
+
+  async submitAssessment(data) {
+    // Simulate API call delay
+    await new Promise(resolve => setTimeout(resolve, 2000))
+
+    // In a real implementation, you would send this data to your backend
+    // which would then send the assessment report email using a service like:
+    // - SendGrid
+    // - Mailgun  
+    // - AWS SES
+    // - Nodemailer with SMTP
+
+    const emailContent = this.generateEmailContent(data)
+    
+    // For demo purposes, we'll log the email content
+    console.log('Assessment report would be sent to:', this.consultantEmail)
+    console.log('Email content:', emailContent)
+    
+    // Simulate occasional failures for demo
+    if (Math.random() < 0.1) {
+      throw new Error('Assessment submission service temporarily unavailable')
+    }
+
+    return { success: true, message: 'Assessment submitted successfully' }
+  }
+
+  generateEmailContent(data) {
+    const { name, age, maritalStatus, email, score, risk, responses } = data
+    
+    const currentDate = new Date().toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    })
+    
+    return {
+      to: this.consultantEmail,
+      subject: `Anger Management Assessment Report - ${name}`,
+      html: `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+          <h1 style="color: #2563eb; text-align: center;">Anger Management Assessment Report</h1>
+          
+          <div style="background: #f8fafc; padding: 20px; border-radius: 8px; margin: 20px 0;">
+            <h2 style="color: #1e293b; margin-top: 0;">Client Information</h2>
+            <p><strong>Name:</strong> ${name}</p>
+            <p><strong>Age:</strong> ${age}</p>
+            <p><strong>Marital Status:</strong> ${maritalStatus}</p>
+            <p><strong>Email:</strong> ${email}</p>
+            <p><strong>Assessment Date:</strong> ${currentDate}</p>
+            
+            <div style="background: #e0f2fe; padding: 15px; border-radius: 6px; margin-top: 15px; border-left: 4px solid #0284c7;">
+              <h3 style="color: #0c4a6e; margin: 0 0 10px 0; font-size: 16px;">📞 Contact Information for Follow-up</h3>
+              <p style="margin: 5px 0; color: #0c4a6e;"><strong>Client Name:</strong> ${name}</p>
+              <p style="margin: 5px 0; color: #0c4a6e;"><strong>Email Address:</strong> <a href="mailto:${email}" style="color: #0284c7;">${email}</a></p>
+              <p style="margin: 5px 0; color: #0c4a6e;"><strong>Age:</strong> ${age} years old</p>
+              <p style="margin: 5px 0; color: #0c4a6e;"><strong>Marital Status:</strong> ${maritalStatus}</p>
+            </div>
+          </div>
+          
+          <p>A new anger management assessment has been completed. Here are the results:</p>
+          
+          <div style="background: #f8fafc; padding: 20px; border-radius: 8px; margin: 20px 0;">
+            <h2 style="color: #1e293b; margin-top: 0;">Assessment Score</h2>
+            <p style="font-size: 18px; font-weight: bold; color: #2563eb;">
+              ${score.score}/${score.maxScore} (${score.percentage}%)
+            </p>
+          </div>
+          
+          <div style="background: ${this.getRiskColor(risk.class)}; padding: 20px; border-radius: 8px; margin: 20px 0;">
+            <h2 style="margin-top: 0;">Risk Level: ${risk.level}</h2>
+            <p>${risk.description}</p>
+          </div>
+          
+          <div style="background: #f0f9ff; padding: 20px; border-radius: 8px; margin: 20px 0;">
+            <h2 style="color: #0c4a6e; margin-top: 0;">Recommendations</h2>
+            <ul style="color: #0c4a6e;">
+              ${risk.recommendations.map(rec => `<li style="margin-bottom: 8px;">${rec}</li>`).join('')}
+            </ul>
+          </div>
+          
+          <div style="background: #ffffff; border: 1px solid #e2e8f0; padding: 20px; border-radius: 8px; margin: 20px 0;">
+            <h2 style="color: #1e293b; margin-top: 0;">Detailed Responses</h2>
+            ${this.generateResponsesSummary(responses)}
+          </div>
+          
+          <div style="text-align: center; margin-top: 30px; padding-top: 20px; border-top: 1px solid #e2e8f0;">
+            <p style="color: #64748b; font-size: 14px;">
+              This assessment is for informational purposes only and should not replace professional medical advice.
+              If the client is experiencing significant anger management challenges, please consider referring them to a 
+              mental health professional.
+            </p>
+            <p style="color: #64748b; font-size: 12px; margin-top: 10px;">
+              Generated by Anger Management Assessment Tool - ${currentDate}
+            </p>
+          </div>
+        </div>
+      `
+    }
+  }
+
+  getRiskColor(riskClass) {
+    switch (riskClass) {
+      case 'risk-low': return '#dcfce7'
+      case 'risk-moderate': return '#fef3c7'
+      case 'risk-high': return '#fee2e2'
+      default: return '#f8fafc'
+    }
+  }
+
+  generateResponsesSummary(responses) {
+    // Generate a comprehensive summary of all responses
+    const sections = [
+      'Anger Triggers & Frequency',
+      'Physical & Emotional Responses', 
+      'Behavioral Responses',
+      'Impact on Relationships',
+      'Coping Strategies & Self-Awareness'
+    ]
+    
+    let summary = ''
+    
+    // Group responses by section
+    const responsesBySection = {}
+    Object.entries(responses).forEach(([key, value]) => {
+      const sectionIndex = parseInt(key.split('_')[0].substring(1))
+      const questionIndex = parseInt(key.split('_')[1].substring(1))
+      
+      if (!responsesBySection[sectionIndex]) {
+        responsesBySection[sectionIndex] = {}
+      }
+      responsesBySection[sectionIndex][questionIndex] = value
+    })
+    
+    // Generate summary for each section
+    Object.entries(responsesBySection).forEach(([sectionIndex, sectionResponses]) => {
+      const sectionTitle = sections[parseInt(sectionIndex)] || `Section ${parseInt(sectionIndex) + 1}`
+      summary += `<h3 style="color: #1e293b; margin-top: 20px; margin-bottom: 10px;">${sectionTitle}</h3>`
+      
+      Object.entries(sectionResponses).forEach(([questionIndex, response]) => {
+        if (typeof response === 'string' && response.trim() !== '') {
+          summary += `<p style="margin-bottom: 10px;"><strong>Question ${parseInt(questionIndex) + 1}:</strong><br>${response}</p>`
+        } else if (typeof response === 'number') {
+          summary += `<p style="margin-bottom: 10px;"><strong>Question ${parseInt(questionIndex) + 1}:</strong> Score ${response}/5</p>`
+        }
+      })
+    })
+
+
+    return summary || '<p>No detailed responses provided.</p>'
+  }
+}
